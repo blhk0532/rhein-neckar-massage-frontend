@@ -18,8 +18,15 @@ interface Girl {
   description: string;
 }
 
+interface Angebot {
+  id?: number;
+  title: string;
+  duration_minutes?: number;
+  price?: number;
+}
+
 const Admin = () => {
-  const { data: girlsData, loading, error } = useFetch<Girl[]>('/GirlsProfiles');
+  const { data: girlsData, loading, error } = useFetch<Girl[]>('/profiles');
   const [girls, setGirls] = useState<Girl[]>([]);
   const [editingGirl, setEditingGirl] = useState<Girl | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -88,6 +95,7 @@ const Admin = () => {
           <TabsList>
             <TabsTrigger value="girls">Girls Profiles</TabsTrigger>
             <TabsTrigger value="mieterinnen">Mieterinnen</TabsTrigger>
+            <TabsTrigger value="bookings">Bookings</TabsTrigger>
             {/* Add more tabs as needed */}
           </TabsList>
           <TabsContent value="girls">
@@ -134,6 +142,9 @@ const Admin = () => {
           <TabsContent value="mieterinnen">
             {/* Similar structure for Mieterinnen */}
             <div>Mieterinnen management coming soon...</div>
+          </TabsContent>
+          <TabsContent value="bookings">
+            <BookingCreateForm />
           </TabsContent>
         </Tabs>
       </div>
@@ -182,6 +193,230 @@ const GirlForm = ({ girl, onSave }: GirlFormProps) => {
       </div>
       <Button type="submit">Save</Button>
     </form>
+  );
+};
+
+const BookingCreateForm = () => {
+  const [profiles, setProfiles] = useState<Girl[]>([]);
+  const [angebots, setAngebots] = useState<Angebot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [bookingData, setBookingData] = useState({
+    girl: '',
+    service: '',
+    date: '',
+    time: '',
+    name: '',
+    phone: '',
+    email: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch profiles
+        const profilesResponse = await fetch(`${import.meta.env.VITE_API_BASE}/profiles`);
+        if (profilesResponse.ok) {
+          const profilesData = await profilesResponse.json();
+          const profilesList = profilesData.data || [];
+          setProfiles(profilesList);
+        }
+
+        // Fetch angebots
+        const angebotResponse = await fetch(`${import.meta.env.VITE_API_BASE}/angebots`);
+        if (angebotResponse.ok) {
+          const angebotData = await angebotResponse.json();
+          const angebotList = angebotData.data || [];
+          setAngebots(angebotList);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setBookingData({
+      ...bookingData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE}/bookings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      if (response.ok) {
+        alert('Booking created successfully!');
+        setBookingData({
+          girl: '',
+          service: '',
+          date: '',
+          time: '',
+          name: '',
+          phone: '',
+          email: '',
+          message: ''
+        });
+      } else {
+        throw new Error('Failed to create booking');
+      }
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      alert('Failed to create booking');
+    }
+  };
+
+  const timeSlots = [
+    "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", 
+    "18:00", "19:00", "20:00", "21:00", "22:00", "23:00"
+  ];
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-semibold">Create Booking</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="girl">Masseurin</Label>
+            <select
+              id="girl"
+              name="girl"
+              value={bookingData.girl}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
+              required
+            >
+              <option value="">Select Masseurin</option>
+              {profiles.map((profile) => (
+                <option key={profile.id} value={profile.name}>
+                  {profile.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label htmlFor="service">Service</Label>
+            <select
+              id="service"
+              name="service"
+              value={bookingData.service}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
+              required
+            >
+              <option value="">Select Service</option>
+              {angebots.map((angebot) => (
+                <option key={angebot.id} value={angebot.title}>
+                  {angebot.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="date">Date</Label>
+            <Input
+              id="date"
+              name="date"
+              type="date"
+              value={bookingData.date}
+              onChange={handleInputChange}
+              min={new Date().toISOString().split('T')[0]}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="time">Time</Label>
+            <select
+              id="time"
+              name="time"
+              value={bookingData.time}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
+              required
+            >
+              <option value="">Select Time</option>
+              {timeSlots.map((time) => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              value={bookingData.name}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              value={bookingData.phone}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            value={bookingData.email}
+            onChange={handleInputChange}
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="message">Message</Label>
+          <textarea
+            id="message"
+            name="message"
+            value={bookingData.message}
+            onChange={handleInputChange}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white resize-none"
+          />
+        </div>
+
+        <Button type="submit">Create Booking</Button>
+      </form>
+    </div>
   );
 };
 

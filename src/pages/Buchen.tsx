@@ -86,17 +86,20 @@ const Buchen = () => {
           }));
         }
 
-        // Fetch active angebots
-        const angebotResponse = await fetch(`${import.meta.env.VITE_API_BASE}/angebots`);
+        // Fetch active angebots (API filters is_active=1 by default)
+        const angebotResponse = await fetch(`${import.meta.env.VITE_API_BASE}/angebots?active_only=1`);
         if (angebotResponse.ok) {
           const angebotData = await angebotResponse.json();
           const angebotList = angebotData.data || [];
           
-          setServices(angebotList.map((a: { title: string; duration_minutes?: number; price?: number }) => ({
-            name: a.title,
-            duration: a.duration_minutes ? `${a.duration_minutes} Min` : '',
-            price: a.price ? `${a.price}€` : ''
-          })));
+          // Filter to only show active angebots
+          setServices(angebotList
+            .filter((a: { is_active?: boolean }) => a.is_active !== false)
+            .map((a: { title: string; duration_minutes?: number; price?: number }) => ({
+              name: a.title,
+              duration: a.duration_minutes ? `${a.duration_minutes} Min` : '',
+              price: a.price ? `${a.price}€` : ''
+            })));
         }
       } catch (error) {
         console.error('Error fetching data:', error);
