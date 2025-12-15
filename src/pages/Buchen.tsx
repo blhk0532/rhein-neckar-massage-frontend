@@ -315,10 +315,14 @@ const Buchen = () => {
                     
                     <div className="grid md:grid-cols-2 gap-8">
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                        <label
+                          htmlFor="girl-select"
+                          className="block text-sm font-medium text-gray-300 mb-3"
+                        >
                           {t('buchen.step1.girl_label')}
                         </label>
                         <select
+                          id="girl-select"
                           name="girl"
                           value={bookingData.girl}
                           onChange={handleInputChange}
@@ -335,10 +339,14 @@ const Buchen = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-300 mb-3">
+                        <label
+                          htmlFor="service-select"
+                          className="block text-sm font-medium text-gray-300 mb-3"
+                        >
                           {t('buchen.step1.service_label')}
                         </label>
                         <select
+                          id="service-select"
                           name="service"
                           value={bookingData.service}
                           onChange={handleInputChange}
