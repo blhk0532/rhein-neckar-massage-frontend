@@ -66,8 +66,8 @@ export const useTranslation = () => {
     // Load language from localStorage
     const savedLanguage = localStorage.getItem('language') as 'de' | 'en' || 'de';
     setCurrentLanguage(savedLanguage);
-
     // Helper to resolve API base at runtime. Prefer Vite build-time env, then window global, then origin/api
+    // Defined inside the hook so other functions (changeLanguage/refreshTranslations) can reuse it.
     const getApiBase = () => {
       try {
         const buildTime = (import.meta as any).env?.VITE_API_BASE as string | undefined;
@@ -163,7 +163,15 @@ export const useTranslation = () => {
 
     // Fetch translations for the new language from API
     try {
-      const apiBase = import.meta.env.VITE_API_BASE;
+      const apiBase = (() => {
+        try {
+          const buildTime = (import.meta as any).env?.VITE_API_BASE as string | undefined;
+          if (buildTime && buildTime !== 'undefined') return buildTime.replace(/\/$/, '');
+        } catch (e) {}
+        const runtime = (window as any).__API_BASE || (window as any).__RUNTIME_CONFIG?.VITE_API_BASE;
+        if (runtime) return String(runtime).replace(/\/$/, '');
+        return `${window.location.origin.replace(/\/$/, '')}/api`;
+      })();
       const response = await fetch(`${apiBase}/language-strings?lang=${language}&t=${Date.now()}`);
       if (response.ok) {
         const payload = await response.json();
@@ -223,7 +231,15 @@ export const useTranslation = () => {
 
     const refreshTranslations = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_BASE;
+      const apiBase = (() => {
+        try {
+          const buildTime = (import.meta as any).env?.VITE_API_BASE as string | undefined;
+          if (buildTime && buildTime !== 'undefined') return buildTime.replace(/\/$/, '');
+        } catch (e) {}
+        const runtime = (window as any).__API_BASE || (window as any).__RUNTIME_CONFIG?.VITE_API_BASE;
+        if (runtime) return String(runtime).replace(/\/$/, '');
+        return `${window.location.origin.replace(/\/$/, '')}/api`;
+      })();
       const response = await fetch(`${apiBase}/language-strings?lang=${currentLanguage}&t=${Date.now()}`);
       if (response.ok) {
         const payload = await response.json();
